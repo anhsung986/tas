@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Thư Mục 0/0/</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="text-slate-100 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="glass rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-indigo-500/20 border border-indigo-500/30 rounded-xl text-indigo-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Quản Lý Thư Mục 0/0/</h1>
+                    <p class="text-xs text-slate-400">Danh sách các file HTML trong thư mục con</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Nút mở khóa Admin Random -->
+                <button onclick="openAdminModal()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-semibold shadow-lg shadow-purple-900/30 transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    Trang Random (Admin)
+                </button>
+                <button onclick="loadFiles()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Làm mới
+                </button>
+            </div>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="glass rounded-2xl p-4 flex items-center gap-3 shadow-lg">
+            <svg class="w-5 h-5 text-slate-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <input type="text" id="searchInput" oninput="filterFiles()" placeholder="Tìm kiếm file trong 0/0/..." class="w-full bg-transparent border-none text-sm text-slate-100 placeholder-slate-400 focus:outline-none">
+        </div>
+
+        <!-- File Grid -->
+        <div id="fileGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic Files -->
+        </div>
+
+    </div>
+
+    <!-- Admin Password Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="glass rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl border border-white/10">
+            <div class="text-center space-y-1">
+                <h3 class="text-lg font-bold">Xác thực Admin</h3>
+                <p class="text-xs text-slate-400">Nhập mật khẩu để truy cập trang Random bí mật</p>
+            </div>
+            <input type="password" id="adminPass" placeholder="Nhập mật khẩu..." class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+            <div class="flex gap-2">
+                <button onclick="closeAdminModal()" class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition">Hủy</button>
+                <button onclick="verifyAdmin()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold transition shadow-lg shadow-indigo-600/30">Truy cập</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Danh sách các file trong thư mục 0/0/
+        const files = [
+            "0/0/trang1.html",
+            "0/0/demo.html",
+            "0/0/dashboard.html",
+            "0/0/sample.html",
+            "0/0/index.html"
+        ];
+
+        function renderFiles(list) {
+            const grid = document.getElementById('fileGrid');
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">Không tìm thấy file nào phù hợp.</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(filePath => `
+                <a href="${filePath}" class="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 group">
+                    <div class="flex items-start justify-between">
+                        <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 group-hover:bg-indigo-500/20 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400">HTML File</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-slate-200 group-hover:text-indigo-300 transition truncate">${filePath}</div>
+                        <div class="text-xs text-slate-400 mt-1">Nhấn để mở trang</div>
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        function filterFiles() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = files.filter(f => f.toLowerCase().includes(keyword));
+            renderFiles(filtered);
+        }
+
+        function loadFiles() {
+            renderFiles(files);
+        }
+
+        function openAdminModal() {
+            document.getElementById('adminModal').classList.remove('hidden');
+            document.getElementById('adminModal').classList.add('flex');
+            document.getElementById('adminPass').value = '';
+            document.getElementById('adminPass').focus();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.remove('flex');
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function verifyAdmin() {
+            const pass = document.getElementById('adminPass').value;
+            // Mật khẩu mẫu cho admin là "admin123" (bạn có thể đổi tùy ý)
+            if (pass === 'admin123') {
+                window.location.href = 'random';
+            } else {
+                alert('Mật khẩu không đúng!');
+            }
+        }
+
+        loadFiles();
+    </script>
+</body>
+</html>
+                      
