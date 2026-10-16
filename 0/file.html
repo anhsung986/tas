@@ -4,156 +4,234 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Thư Mục 0/0/</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
-            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh; display: flex; justify-content: center;
+            align-items: center; color: #ffffff; padding: 20px;
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .dashboard {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px); border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px;
+            width: 100%; max-width: 950px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 35px; flex-wrap: wrap; gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px;
         }
-        .glass-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+        .header-left h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .header-left p { font-size: 1rem; font-weight: 400; color: rgba(255, 255, 255, 0.7); }
+        
+        .admin-btn {
+            background: rgba(147, 51, 234, 0.3); border: 1px solid rgba(147, 51, 234, 0.5);
+            padding: 10px 20px; border-radius: 14px; color: #fff; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;
+            font-size: 0.9rem; text-decoration: none;
         }
+        .admin-btn:hover {
+            background: rgba(147, 51, 234, 0.5); transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(147, 51, 234, 0.4);
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px; padding: 30px 20px; text-align: center; text-decoration: none;
+            color: #ffffff; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column; align-items: center; 
+            position: relative; overflow: hidden; cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-8px); 
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255,255,255,0.1);
+        }
+        .icon { font-size: 3.5rem; margin-bottom: 15px; transition: transform 0.3s ease; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .card:hover .icon { transform: scale(1.15); }
+        
+        .title { 
+            font-size: 1.2rem; 
+            font-weight: 700; 
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            word-break: break-all;
+        }
+        
+        #loading { text-align: center; font-size: 1.2rem; width: 100%; grid-column: 1 / -1; color: rgba(255,255,255,0.8); }
+        .error { color: #ff6b6b; text-align: center; width: 100%; grid-column: 1 / -1; }
+
+        /* Giao diện khung Embed Loading & Modal Admin */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: rgba(20, 30, 48, 0.9); border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px; border-radius: 20px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 100%; max-width: 400px;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #00f2fe;
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal p { font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; color: #e0f2fe; margin-bottom: 20px; }
+        
+        .modal input {
+            width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; margin-bottom: 15px; outline: none;
+        }
+        .modal input:focus { border-color: #00f2fe; }
+        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons button {
+            flex: 1; padding: 10px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .btn-confirm { background: #00f2fe; color: #0f2027; }
+        .btn-confirm:hover { background: #38bdf8; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-cancel:hover { background: rgba(255,255,255,0.2); }
     </style>
 </head>
-<body class="text-slate-100 p-4 md:p-8">
-    <div class="max-w-6xl mx-auto space-y-6">
-        
-        <!-- Header -->
-        <header class="glass rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-            <div class="flex items-center gap-3">
-                <div class="p-3 bg-indigo-500/20 border border-indigo-500/30 rounded-xl text-indigo-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight">Quản Lý Thư Mục 0/0/</h1>
-                    <p class="text-xs text-slate-400">Danh sách các file HTML trong thư mục con</p>
-                </div>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-left">
+                <h1>Quản Lý Thư Mục 0/0/</h1>
+                <p>Tự động quét và liệt kê các file trong thư mục <strong>0/0/</strong></p>
             </div>
-            
-            <div class="flex items-center gap-3">
-                <!-- Nút mở khóa Admin Random -->
-                <button onclick="openAdminModal()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-semibold shadow-lg shadow-purple-900/30 transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    Trang Random (Admin)
-                </button>
-                <button onclick="loadFiles()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    Làm mới
-                </button>
-            </div>
-        </header>
-
-        <!-- Search Bar -->
-        <div class="glass rounded-2xl p-4 flex items-center gap-3 shadow-lg">
-            <svg class="w-5 h-5 text-slate-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            <input type="text" id="searchInput" oninput="filterFiles()" placeholder="Tìm kiếm file trong 0/0/..." class="w-full bg-transparent border-none text-sm text-slate-100 placeholder-slate-400 focus:outline-none">
+            <button onclick="openAdminModal()" class="admin-btn">
+                🔒 Trang Random (Admin)
+            </button>
         </div>
-
-        <!-- File Grid -->
-        <div id="fileGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Dynamic Files -->
+        <div class="grid" id="file-grid">
+            <div id="loading">⏳ Đang quét thư mục 0/0/...</div>
         </div>
-
     </div>
 
-    <!-- Admin Password Modal -->
-    <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="glass rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl border border-white/10">
-            <div class="text-center space-y-1">
-                <h3 class="text-lg font-bold">Xác thực Admin</h3>
-                <p class="text-xs text-slate-400">Nhập mật khẩu để truy cập trang Random bí mật</p>
-            </div>
-            <input type="password" id="adminPass" placeholder="Nhập mật khẩu..." class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-            <div class="flex gap-2">
-                <button onclick="closeAdminModal()" class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition">Hủy</button>
-                <button onclick="verifyAdmin()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold transition shadow-lg shadow-indigo-600/30">Truy cập</button>
+    <!-- Khung Embed thông báo chờ chuyển hướng -->
+    <div id="overlay" class="overlay">
+        <div class="modal">
+            <div class="spinner"></div>
+            <p>[ Đang kiểm tra thông tin... ]</p>
+        </div>
+    </div>
+
+    <!-- Modal Mật Khẩu Admin -->
+    <div id="adminModal" class="overlay">
+        <div class="modal" style="text-align: left;">
+            <p style="text-align: center;">🔐 Xác Thực Quản Trị Viên</p>
+            <input type="password" id="adminPass" placeholder="Nhập mật khẩu admin..." onkeydown="if(event.key==='Enter')verifyAdmin()">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeAdminModal()">Hủy</button>
+                <button class="btn-confirm" onclick="verifyAdmin()">Truy cập</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Danh sách các file trong thư mục 0/0/
-        const files = [
-            "0/0/trang1.html",
-            "0/0/demo.html",
-            "0/0/dashboard.html",
-            "0/0/sample.html",
-            "0/0/index.html"
-        ];
+        // Cấu hình GitHub Repository của bạn (có thể thay đổi tên repo nếu cần)
+        const githubUsername = 'anhsung986'; 
+        const repoName = 'canhan'; // Tên repo chứa thư mục 0/0
+        const folderPath = '0/0'; 
 
-        function renderFiles(list) {
-            const grid = document.getElementById('fileGrid');
-            if (list.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">Không tìm thấy file nào phù hợp.</div>`;
-                return;
+        const apiURL = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${folderPath}`;
+
+        async function fetchGitHubFiles() {
+            const grid = document.getElementById('file-grid');
+            
+            try {
+                const response = await fetch(apiURL);
+                if (!response.ok) throw new Error('Thư mục "0/0" chưa tồn tại hoặc rỗng trên GitHub');
+                
+                const files = await response.json();
+                grid.innerHTML = ''; 
+                
+                if(!Array.isArray(files) || files.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; width:100%; color:rgba(255,255,255,0.7);">Thư mục 0/0 hiện đang trống.</div>';
+                    return;
+                }
+                
+                files.forEach(file => {
+                    let icon = '📄'; 
+                    const fileNameLower = file.name.toLowerCase();
+                    
+                    if (file.type === 'dir') icon = '📁';
+                    else if(fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.png') || fileNameLower.endsWith('.gif')) icon = '🖼️';
+                    else if(fileNameLower.endsWith('.pdf')) icon = '📕';
+                    else if(fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.csv')) icon = '📊';
+                    else if(fileNameLower.endsWith('.mp4')) icon = '🎬';
+                    else if(fileNameLower.endsWith('.html')) icon = '🌐';
+                    
+                    // Hiển thị tên file viết hoa gọn gàng
+                    const displayName = file.name.toUpperCase();
+                    
+                    const card = `
+                        <a onclick="handleFileClick('${file.name}')" class="card">
+                            <span class="icon">${icon}</span>
+                            <span class="title">${displayName}</span>
+                        </a>
+                    `;
+                    grid.innerHTML += card;
+                });
+            } catch (error) {
+                grid.innerHTML = `<div class="error">Lỗi: ${error.message}.</div>`;
             }
-
-            grid.innerHTML = list.map(filePath => `
-                <a href="${filePath}" class="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 group">
-                    <div class="flex items-start justify-between">
-                        <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 group-hover:bg-indigo-500/20 transition">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        </div>
-                        <span class="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400">HTML File</span>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold text-slate-200 group-hover:text-indigo-300 transition truncate">${filePath}</div>
-                        <div class="text-xs text-slate-400 mt-1">Nhấn để mở trang</div>
-                    </div>
-                </a>
-            `).join('');
         }
 
-        function filterFiles() {
-            const keyword = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = files.filter(f => f.toLowerCase().includes(keyword));
-            renderFiles(filtered);
+        // Hàm xử lý khi bấm vào thẻ file trong 0/0/
+        function handleFileClick(fileName) {
+            const overlay = document.getElementById('overlay');
+            const targetUrl = `0/0/${fileName}`;
+            
+            overlay.classList.add('active');
+            
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 1200); 
         }
 
-        function loadFiles() {
-            renderFiles(files);
-        }
-
+        // Quản lý Modal Admin
         function openAdminModal() {
-            document.getElementById('adminModal').classList.remove('hidden');
-            document.getElementById('adminModal').classList.add('flex');
+            document.getElementById('adminModal').classList.add('active');
             document.getElementById('adminPass').value = '';
             document.getElementById('adminPass').focus();
         }
 
         function closeAdminModal() {
-            document.getElementById('adminModal').classList.remove('flex');
-            document.getElementById('adminModal').classList.add('hidden');
+            document.getElementById('adminModal').classList.remove('active');
         }
 
         function verifyAdmin() {
             const pass = document.getElementById('adminPass').value;
-            // Mật khẩu mẫu cho admin là "admin123" (bạn có thể đổi tùy ý)
+            // Mật khẩu mặc định là "admin123" (bạn có thể thay đổi tùy ý bên dưới)
             if (pass === 'admin123') {
-                window.location.href = 'random';
+                const overlay = document.getElementById('overlay');
+                document.getElementById('adminModal').classList.remove('active');
+                overlay.classList.add('active');
+                setTimeout(() => {
+                    window.location.href = 'random.html';
+                }, 1000);
             } else {
-                alert('Mật khẩu không đúng!');
+                alert('Mật khẩu không chính xác!');
+                document.getElementById('adminPass').value = '';
+                document.getElementById('adminPass').focus();
             }
         }
 
-        loadFiles();
+        fetchGitHubFiles();
     </script>
 </body>
 </html>
-                      
