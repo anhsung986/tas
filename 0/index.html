@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Không Gian Cá Nhân</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            /* Màu nền xanh lam đậm sang trọng */
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh; display: flex; justify-content: center;
+            align-items: center; color: #ffffff; padding: 20px;
+        }
+        .dashboard {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px); border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 50px 40px;
+            width: 100%; max-width: 900px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        .header { text-align: center; margin-bottom: 45px; }
+        .header h1 { font-size: 2.8rem; font-weight: 700; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .header p { font-size: 1.1rem; font-weight: 400; color: rgba(255, 255, 255, 0.7); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px; padding: 35px 20px; text-align: center; text-decoration: none;
+            color: #ffffff; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column; align-items: center; 
+            position: relative; overflow: hidden; cursor: pointer;
+        }
+        /* Hiệu ứng di chuột nổi bật hơn */
+        .card:hover {
+            transform: translateY(-8px); 
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255,255,255,0.1);
+        }
+        .icon { font-size: 4rem; margin-bottom: 20px; transition: transform 0.3s ease; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .card:hover .icon { transform: scale(1.15); }
+        
+        /* Chỉnh chữ to, in đậm và rõ nét */
+        .title { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #loading { text-align: center; font-size: 1.2rem; width: 100%; grid-column: 1 / -1; color: rgba(255,255,255,0.8); }
+        .error { color: #ff6b6b; text-align: center; width: 100%; grid-column: 1 / -1; }
+
+        /* Giao diện khung Embed Loading */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: rgba(20, 30, 48, 0.8); border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px 50px; border-radius: 20px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #00f2fe;
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal p { font-size: 1.3rem; font-weight: 600; letter-spacing: 1px; color: #e0f2fe; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>Trang Chủ Cá Nhân</h1>
+            <p>Tự động cập nhật tài liệu từ thư mục <strong>CN</strong> !</p>
+        </div>
+        <div class="grid" id="file-grid">
+            <div id="loading">⏳ Đang quét thư mục cn...</div>
+        </div>
+    </div>
+
+    <!-- Khung Embed thông báo chờ -->
+    <div id="overlay" class="overlay">
+        <div class="modal">
+            <div class="spinner"></div>
+            <p>[ Đang kiểm tra thông tin... ]</p>
+        </div>
+    </div>
+
+    <script>
+        const githubUsername = 'anhsung986'; 
+        const repoName = 'canhan';
+        const folderPath = 'cn'; 
+
+        const apiURL = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${folderPath}`;
+
+        async function fetchGitHubFiles() {
+            const grid = document.getElementById('file-grid');
+            
+            try {
+                const response = await fetch(apiURL);
+                if (!response.ok) throw new Error('Thư mục "cn" chưa tồn tại hoặc rỗng');
+                
+                const files = await response.json();
+                grid.innerHTML = ''; 
+                
+                if(!Array.isArray(files) || files.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; width:100%; color:rgba(255,255,255,0.7);">Thư mục cn hiện đang trống.</div>';
+                    return;
+                }
+                
+                files.forEach(file => {
+                    let icon = '📄'; 
+                    const fileNameLower = file.name.toLowerCase();
+                    
+                    if (file.type === 'dir') icon = '📁';
+                    else if(fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.png') || fileNameLower.endsWith('.gif')) icon = '🖼️';
+                    else if(fileNameLower.endsWith('.pdf')) icon = '📕';
+                    else if(fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.csv')) icon = '📊';
+                    else if(fileNameLower.endsWith('.mp4')) icon = '🎬';
+                    else if(fileNameLower.endsWith('.html')) icon = '🌐';
+                    
+                    // Cắt bỏ đuôi file (từ dấu chấm cuối cùng) và viết hoa toàn bộ để hiển thị
+                    const displayName = file.name.replace(/\.[^/.]+$/, "").toUpperCase();
+                    
+                    const card = `
+                        <a onclick="handleFileClick('${file.name}')" class="card">
+                            <span class="icon">${icon}</span>
+                            <span class="title">${displayName}</span>
+                        </a>
+                    `;
+                    grid.innerHTML += card;
+                });
+            } catch (error) {
+                grid.innerHTML = `<div class="error">Lỗi: ${error.message}.</div>`;
+            }
+        }
+
+        // Hàm xử lý khi bấm vào thẻ file (tự động loại bỏ đuôi .html khi tạo đường dẫn)
+        function handleFileClick(fileName) {
+            const overlay = document.getElementById('overlay');
+            
+            // Xóa phần mở rộng khỏi tên file (ví dụ: htkt.html thành htkt)
+            const cleanName = fileName.replace(/\.[^/.]+$/, "");
+            const targetUrl = `https://st.canhan.gt.tc/cn/${cleanName}`;
+            
+            // Hiển thị khung chờ [ Đang kiểm tra thông tin... ]
+            overlay.classList.add('active');
+            
+            // Đợi 1.5 giây rồi chuyển hướng đến link sạch không có đuôi .html
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 1500); 
+        }
+
+        fetchGitHubFiles();
+    </script>
+</body>
+</html>
