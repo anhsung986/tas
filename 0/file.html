@@ -98,8 +98,8 @@
 
     <script>
         const githubUsername = 'anhsung986'; 
-        const repoName = 'canhan';
-        const folderPath = 'cn'; 
+        const repoName = 'tas';
+        const folderPath = '0/0'; 
 
         const apiURL = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${folderPath}`;
 
@@ -108,7 +108,7 @@
             
             try {
                 const response = await fetch(apiURL);
-                if (!response.ok) throw new Error('Thư mục "cn" chưa tồn tại hoặc rỗng');
+                if (!response.ok) throw new Error('Thư mục "0" chưa tồn tại hoặc rỗng');
                 
                 const files = await response.json();
                 grid.innerHTML = ''; 
@@ -151,7 +151,7 @@
             
             // Xóa phần mở rộng khỏi tên file (ví dụ: htkt.html thành htkt)
             const cleanName = fileName.replace(/\.[^/.]+$/, "");
-            const targetUrl = `https://st.canhan.gt.tc/cn/${cleanName}`;
+            const targetUrl = `https://io.tas.ct.ws/0/0/${cleanName}`;
             
             // Hiển thị khung chờ [ Đang kiểm tra thông tin... ]
             overlay.classList.add('active');
