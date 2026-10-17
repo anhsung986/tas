@@ -14,6 +14,37 @@
             min-height: 100vh; display: flex; justify-content: center;
             align-items: center; color: #ffffff; padding: 20px;
         }
+
+        /* Nút Trang Chủ ở góc phải màn hình */
+        .home-btn {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50px;
+            padding: 10px 20px;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
         .dashboard {
             background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px); border-radius: 24px;
@@ -78,6 +109,12 @@
     </style>
 </head>
 <body>
+    <!-- Nút Trang Chủ góc phải màn hình -->
+    <a href="/" class="home-btn">
+        <span>🏠</span>
+        <span>Trang Chủ</span>
+    </a>
+
     <div class="dashboard">
         <div class="header">
             <h1>Trang Chủ Cá Nhân</h1>
@@ -103,64 +140,91 @@
 
         const apiURL = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${folderPath}`;
 
+        // Hàm render giao diện danh sách file
+        function renderFiles(files) {
+            const grid = document.getElementById('file-grid');
+            grid.innerHTML = ''; 
+            
+            if (!Array.isArray(files) || files.length === 0) {
+                grid.innerHTML = '<div style="text-align:center; width:100%; color:rgba(255,255,255,0.7);">Thư mục cn hiện đang trống.</div>';
+                return;
+            }
+            
+            files.forEach(file => {
+                let icon = '📄'; 
+                const fileNameLower = file.name.toLowerCase();
+                
+                if (file.type === 'dir') icon = '📁';
+                else if(fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.png') || fileNameLower.endsWith('.gif')) icon = '🖼️';
+                else if(fileNameLower.endsWith('.pdf')) icon = '📕';
+                else if(fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.csv')) icon = '📊';
+                else if(fileNameLower.endsWith('.mp4')) icon = '🎬';
+                else if(fileNameLower.endsWith('.html')) icon = '🌐';
+                
+                // Cắt bỏ đuôi file và viết hoa toàn bộ để hiển thị
+                const displayName = file.name.replace(/\.[^/.]+$/, "").toUpperCase();
+                
+                const card = `
+                    <a onclick="handleFileClick('${file.name}')" class="card">
+                        <span class="icon">${icon}</span>
+                        <span class="title">${displayName}</span>
+                    </a>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
         async function fetchGitHubFiles() {
             const grid = document.getElementById('file-grid');
             
+            // 1. Kiểm tra Cache trong SessionStorage
+            const cachedData = sessionStorage.getItem('github_files_cache');
+            if (cachedData) {
+                // Nếu đã có cache, render ngay lập tức (không hiện thông báo "⏳ Đang quét...")
+                renderFiles(JSON.parse(cachedData));
+            }
+
+            // 2. Tải/Cập nhật dữ liệu mới từ GitHub API
             try {
                 const response = await fetch(apiURL);
                 if (!response.ok) throw new Error('Thư mục "0" chưa tồn tại hoặc rỗng');
                 
                 const files = await response.json();
-                grid.innerHTML = ''; 
                 
-                if(!Array.isArray(files) || files.length === 0) {
-                    grid.innerHTML = '<div style="text-align:center; width:100%; color:rgba(255,255,255,0.7);">Thư mục cn hiện đang trống.</div>';
-                    return;
-                }
+                // Lưu vào cache
+                sessionStorage.setItem('github_files_cache', JSON.stringify(files));
                 
-                files.forEach(file => {
-                    let icon = '📄'; 
-                    const fileNameLower = file.name.toLowerCase();
-                    
-                    if (file.type === 'dir') icon = '📁';
-                    else if(fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.png') || fileNameLower.endsWith('.gif')) icon = '🖼️';
-                    else if(fileNameLower.endsWith('.pdf')) icon = '📕';
-                    else if(fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.csv')) icon = '📊';
-                    else if(fileNameLower.endsWith('.mp4')) icon = '🎬';
-                    else if(fileNameLower.endsWith('.html')) icon = '🌐';
-                    
-                    // Cắt bỏ đuôi file (từ dấu chấm cuối cùng) và viết hoa toàn bộ để hiển thị
-                    const displayName = file.name.replace(/\.[^/.]+$/, "").toUpperCase();
-                    
-                    const card = `
-                        <a onclick="handleFileClick('${file.name}')" class="card">
-                            <span class="icon">${icon}</span>
-                            <span class="title">${displayName}</span>
-                        </a>
-                    `;
-                    grid.innerHTML += card;
-                });
+                // Cập nhật giao diện với dữ liệu mới nhất
+                renderFiles(files);
             } catch (error) {
-                grid.innerHTML = `<div class="error">Lỗi: ${error.message}.</div>`;
+                // Nếu chưa từng có cache mà bị lỗi thì mới hiện thông báo lỗi
+                if (!cachedData) {
+                    grid.innerHTML = `<div class="error">Lỗi: ${error.message}.</div>`;
+                }
             }
         }
 
-        // Hàm xử lý khi bấm vào thẻ file (tự động loại bỏ đuôi .html khi tạo đường dẫn)
+        // Hàm xử lý khi bấm vào thẻ file
         function handleFileClick(fileName) {
             const overlay = document.getElementById('overlay');
             
-            // Xóa phần mở rộng khỏi tên file (ví dụ: htkt.html thành htkt)
             const cleanName = fileName.replace(/\.[^/.]+$/, "");
             const targetUrl = `https://io.tas.ct.ws/0/0/${cleanName}`;
             
-            // Hiển thị khung chờ [ Đang kiểm tra thông tin... ]
             overlay.classList.add('active');
             
-            // Đợi 1.5 giây rồi chuyển hướng đến link sạch không có đuôi .html
             setTimeout(() => {
                 window.location.href = targetUrl;
             }, 1500); 
         }
+
+        // Đảm bảo khi quay lại trang qua nút Back trình duyệt, ẩn overlay nếu đang bật
+        window.addEventListener('pageshow', function(event) {
+            const overlay = document.getElementById('overlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+        });
 
         fetchGitHubFiles();
     </script>
